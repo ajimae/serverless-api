@@ -6,26 +6,23 @@ const {
   marshall,
   unmarshall,
   client: db,
-  PutItemCommand
+  PutItemCommand,
 } = require("../init-db")
 
-console.log(process.env.TABLE_NAME, '>>>>>')
 module.exports.createPost = function (event, context, callback) {
-  const body = JSON.pars(event.body)
   const response = { statusCode: 200 }
-
-
-  let params = {
+  const params = {
     TableName: process.env.TABLE_NAME,
-    Item: marshall(JSON.stringify(body) || {})
+    Item: marshall(JSON.stringify(event.body) || {})
   }
 
   db.send(new PutItemCommand(params), function(error, data) {
     if (error) {
+      console.error(error)
       response.statusCode = 500
       response.body = JSON.stringify({
-        message: "failed to create post",
-        errorStack: error.stack
+        message: error.message || "failed to create posts.",
+        rawData: error.stack
       })
 
       callback(new Error(response))
@@ -33,11 +30,9 @@ module.exports.createPost = function (event, context, callback) {
     }
 
     response.body = JSON.stringify({
-      message: "successfully retrieved post.",
+      message: "successfully create post.",
       data: data ? unmarshall(data) : {},
-      rawData: data
+      rawData: data 
     })
-
-    callback(null, response)
   })
 }
