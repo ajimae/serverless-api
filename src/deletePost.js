@@ -1,32 +1,71 @@
+// 'use strict'
+
+// const AWS = require('aws-sdk')
+// const dynamodb = AWS.DynamoDB.DocumentClient()
+
+// module.exports.createTodo = function(event, context, callback) {
+
+//   const params = {
+//     TableName: 'todos',
+//     key: {
+//       id: event.pathParameters.id
+//     }
+//   }
+
+//   dynamodb.delete(params, function () {
+//     if (error) {
+//       console.error(error)
+//       callback(new Error(error))
+//       return
+//     }
+
+//     const response = data.Item ? {
+//       statusCode: 204,
+//       body: JSON.stringify({})
+//     } : {
+//       statusCode: 404,
+//       body: JSON.stringify({ "message": "Task not found" })
+//     }
+
+//     callback(null, response)
+//   })
+// }
+
 'use strict'
 
-const AWS = require('aws-sdk')
-const dynamodb = AWS.DynamoDB.DocumentClient()
+const uuid = require('uuid')
 
-module.exports.deletePost = function(event, context, callback) {
+const {
+  marshall,
+  unmarshall,
+  client: db,
+  PutItemCommand,
+} = require("../init-db")
 
+module.exports.createPost = function (event, context, callback) {
+  const response = { statusCode: 200 }
   const params = {
-    TableName: 'todos',
-    key: {
-      id: event.pathParameters.id
-    }
+    TableName: process.env.TABLE_NAME,
+    Item: marshall(JSON.stringify(event.body) || {})
   }
 
-  dynamodb.delete(params, function () {
+  db.send(new PutItemCommand(params), function(error, data) {
     if (error) {
       console.error(error)
-      callback(new Error(error))
+      response.statusCode = 500
+      response.body = JSON.stringify({
+        message: error.message || "failed to create posts.",
+        rawData: error.stack
+      })
+
+      callback(new Error(response))
       return
     }
 
-    const response = data.Item ? {
-      statusCode: 204,
-      body: JSON.stringify({})
-    } : {
-      statusCode: 404,
-      body: JSON.stringify({ "message": "Task not found" })
-    }
-
-    callback(null, response)
+    response.body = JSON.stringify({
+      message: "successfully create post.",
+      data: data ? unmarshall(data) : {},
+      rawData: data 
+    })
   })
 }
