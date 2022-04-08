@@ -9,4 +9,5 @@ jspm_packages
 .env
 
 # DynamoDB files
-.dynamodb/*
+.dynamodb
+.aws

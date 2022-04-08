@@ -1,9 +1,48 @@
-version: '2.1'
+version: '3.2'
 
 services:
   dynamodb:
     image: amazon/dynamodb-local:latest
-    command: -jar DynamoDBLocal.jar -sharedDb -inMemory -port 8001
+    # command: serverless dynamodb start
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/shell/ || exit 1"]
+      interval: 1s
+      timeout: 10s
+      retries: 3
+    env_file:
+      - .env
+    volumes:
+      - type: bind
+        source: ./db
+        target: /Users/chukwuemeka/personal/serverless-demo-api/db/shared-local-instance.db
+        read_only: true
+      - type: volume
+        source: dynamodb
+        target: /Users/chukwuemeka/personal/serverless-demo-api/db
     ports:
-      - '8001:8001'
-    working_dir: ./dynamodblocal
+      - "8000:8000"
+    expose:
+      - "8000"
+    networks:
+      - serverless
+
+  serverless-api:
+    build:
+      context: .
+    # command: bash -c "cp -r ~/.aws /root/.aws"
+    env_file:
+      - .env
+    ports:
+      - "8086:8086/tcp"
+      - "8086:8086/udp"
+    networks:
+      - serverless
+    depends_on:
+      - dynamodb
+
+networks:
+  serverless:
+    driver: bridge
+
+volumes:
+  dynamodb:

@@ -1,38 +1,35 @@
 'use strict'
 
-const uuid = require('uuid')
+const { v4: uuidv4 } = require('uuid')
 
 const {
   marshall,
-  unmarshall,
   client: db,
   PutItemCommand,
 } = require("../init-db")
 
-module.exports.createPost = function (event, context, callback) {
-  const response = { statusCode: 200 }
-  const params = {
-    TableName: process.env.TABLE_NAME,
-    Item: marshall(JSON.stringify(event.body) || {})
-  }
-
-  db.send(new PutItemCommand(params), function(error, data) {
-    if (error) {
-      console.error(error)
-      response.statusCode = 500
-      response.body = JSON.stringify({
-        message: error.message || "failed to create posts.",
-        rawData: error.stack
-      })
-
-      callback(new Error(response))
-      return
+module.exports.createPost = async (event) => {
+  const response = { statusCode: 201 }
+  try {
+    const body = JSON.parse(event.body)
+    const params = {
+      Item: marshall({ ...body, postId: uuidv4() } || {}),
+      TableName: process.env.TABLE_NAME,
     }
 
+    const result = await db.send(new PutItemCommand(params))
     response.body = JSON.stringify({
-      message: "successfully create post.",
-      data: data ? unmarshall(data) : {},
-      rawData: data 
+      message: "successfully created post.",
+      data: result
     })
-  })
+  } catch (e) {
+    console.log(e)
+    response.statusCode = 500
+    response.body = JSON.stringify({
+      message: e.message || 'failed to create post',
+      stackTrace: e.stack
+    })
+  }
+
+  return response
 }

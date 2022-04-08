@@ -79,8 +79,10 @@ const client = new DynamoDBClient({
   region: 'eu-central-1',
   accessKeyId: process.env.ACCESS_KEY_ID,
   secretAccessKeyId: process.env.SECRET_ACCESS_KEY_ID,
-  endpoint: 'http://127.0.0.1:8000'
+  endpoint: 'http://127.0.0.1:8000/'
 })
+
+// const client = new DynamoDBClient({})
 
 // module.exports = client
 module.exports = {

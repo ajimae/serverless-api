@@ -1,30 +1,27 @@
 'use strict'
 
 const {
-  marshall,
   unmarshall,
   client: db,
-  GetItemCommand,
+  ScanCommand,
 } = require("../init-db")
 
-module.exports.getPost = async (event) => {
+module.exports.getAllPost = async (event) => {
   const response = { statusCode: 200 }
   try {
     const params = {
       TableName: process.env.TABLE_NAME,
-      Key: marshall({ postId: event.pathParameters.postId })
     }
-
-    const { Item } = await db.send(new GetItemCommand(params))
+    const { Items } = await db.send(new ScanCommand(params))
     response.body = JSON.stringify({
-      message: "successfully retrieved post.",
-      data: Item ? unmarshall(Item) : {},
+      message: "successfully retrieved all posts.",
+      data: Items.map((item => unmarshall(item)))
     })
   } catch (e) {
     console.log(e)
     response.statusCode = 500
     response.body = JSON.stringify({
-      message: e.message || 'failed to get post',
+      message: e.message || 'failed to retrieve all posts.',
       stackTrace: e.stack
     })
   }

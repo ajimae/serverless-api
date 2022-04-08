@@ -2,7 +2,7 @@ service: serverless-demo-api
 
 provider:
   name: aws
-  runtime: nodejs14.x
+  runtime: nodejs12.x
   stage: dev
   region: eu-central-1
   environment:
@@ -16,7 +16,10 @@ custom:
     start:
       migrate: true
   serverless-offline:
+    # useDocker: true
     resourceRoutes: true # HTTP Proxy
+    host: "0.0.0.0"
+    httpPort: 8086
 
 plugins:
   - serverless-iam-roles-per-function
@@ -52,6 +55,20 @@ functions:
         Action:
           - "dynamodb:GetItem"
         Resource: !GetAtt PostsTable.Arn
+  getAllPost:
+    handler: src/getAllPost.getAllPost
+    name: get-all-post
+    memorySize: 128 # mb
+    timeout: 5 # seconds
+    events:
+      - http:
+          path: post
+          method: GET
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:GetItem"
+        Resource: !GetAtt PostsTable.Arn
   updatePost:
     handler: src/updatePost.updatePost
     name: update-post
@@ -59,7 +76,7 @@ functions:
     timeout: 5
     events:
       - http:
-          path: post/
+          path: post/{postId}
           method: PUT
     iamRoleStatements:
       - Effect: "Allow"
@@ -96,7 +113,3 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-
-# plugins:
-#   - serverless-dynamodb-local
-#   - serverless-offline
